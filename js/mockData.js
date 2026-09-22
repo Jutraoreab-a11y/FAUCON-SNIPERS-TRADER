@@ -54,18 +54,46 @@ const MOCK_NEWS = [
   { time: "Hier 19:02", tag: "Moyenne", asset: "S&P 500", title: "Wall Street clôture proche de l'équilibre avant les minutes de la Fed." },
 ];
 
-const MOCK_TENDANCE_ROWS = [
-  { date: "17/08", spread: "-2.10", spreadEtat: "MOYEN", basisBrent: "-0.42", basisBrentEtat: "Backwardation Modérée", basisSilver: "-0.87", basisSilverEtat: "PANIQUE | Backwardation Critique", basisGold: "1.05", basisGoldEtat: "TENSION" },
-  { date: "16/08", spread: "-1.85", spreadEtat: "MOYEN", basisBrent: "-0.38", basisBrentEtat: "Flat / Légère Back", basisSilver: "-0.79", basisSilverEtat: "PANIQUE | Backwardation Critique", basisGold: "0.92", basisGoldEtat: "TENSION" },
-  { date: "15/08", spread: "-2.40", spreadEtat: "MOYEN", basisBrent: "-0.51", basisBrentEtat: "Backwardation Modérée", basisSilver: "-0.65", basisSilverEtat: "TENSION", basisGold: "0.80", basisGoldEtat: "TENSION" },
-  { date: "14/08", spread: "4.20", spreadEtat: "BON", basisBrent: "0.85", basisBrentEtat: "Forte Backwardation", basisSilver: "-0.40", basisSilverEtat: "TENSION", basisGold: "0.60", basisGoldEtat: "ÉQUILIBRE" },
-];
+// Vue "Tendance" — mêmes 4 champs (Date, Valeur (J), Risque, Interprétation) pour chaque actif
+const MOCK_TENDANCE_BY_ASSET = {
+  BRENT: [
+    { date: "17/08", valeur: "-0.42", risque: "MODÉRÉ", interpretation: "Backwardation modérée, structure encore saine, pas de tension physique." },
+    { date: "16/08", valeur: "-0.38", risque: "MODÉRÉ", interpretation: "Flat à légère backwardation, marché équilibré." },
+    { date: "15/08", valeur: "-0.51", risque: "MODÉRÉ", interpretation: "Backwardation modérée, pression stable sur l'approvisionnement." },
+    { date: "14/08", valeur: "0.85", risque: "ÉLEVÉ", interpretation: "Forte backwardation, tension marquée sur l'approvisionnement à surveiller." },
+  ],
+  GOLD: [
+    { date: "17/08", valeur: "1.05", risque: "FAIBLE", interpretation: "Basis stable, achats refuge soutenus par les banques centrales." },
+    { date: "16/08", valeur: "0.92", risque: "FAIBLE", interpretation: "Structure saine, pas de tension physique détectée." },
+    { date: "15/08", valeur: "0.80", risque: "FAIBLE", interpretation: "Équilibre offre/demande, biais haussier conservé." },
+    { date: "14/08", valeur: "0.60", risque: "MODÉRÉ", interpretation: "Léger tassement de la demande, à surveiller sur 48h." },
+  ],
+  SILVER: [
+    { date: "17/08", valeur: "-0.87", risque: "CRITIQUE", interpretation: "Backwardation critique, panique sur la structure du marché." },
+    { date: "16/08", valeur: "-0.79", risque: "CRITIQUE", interpretation: "Tension physique COMEX toujours extrême." },
+    { date: "15/08", valeur: "-0.65", risque: "ÉLEVÉ", interpretation: "Tension forte, ralentissement de la demande industrielle chinoise." },
+    { date: "14/08", valeur: "-0.40", risque: "MODÉRÉ", interpretation: "Amélioration relative mais structure encore fragile." },
+  ],
+};
 
-const MOCK_CONFIRM_ROWS = [
-  { date: "17/08", spot: "72.40", usdcnh: "7.241", zscore: "+2.31", percentile: "94%", corr20: "0.71", corr60: "0.58", signal: "FORTE", structure: "TENDANCE HAUSSIÈRE", chine: "SOUTIEN CHINE (biais haussier)" },
-  { date: "16/08", spot: "71.95", usdcnh: "7.245", zscore: "+2.05", percentile: "91%", corr20: "0.69", corr60: "0.57", signal: "FORTE", structure: "TENDANCE HAUSSIÈRE", chine: "SOUTIEN CHINE (biais haussier)" },
-  { date: "15/08", spot: "71.20", usdcnh: "7.252", zscore: "+1.60", percentile: "85%", corr20: "0.64", corr60: "0.55", signal: "MODÉRÉE", structure: "TENDANCE HAUSSIÈRE", chine: "NEUTRE : Flux équilibrés" },
-];
+// Vue "Confirmation" — validation macro & signaux, par actif
+const MOCK_CONFIRM_BY_ASSET = {
+  BRENT: [
+    { date: "17/08", spot: "72.40", usdcnh: "7.241", zscore: "+2.31", percentile: "94%", corr20: "0.71", corr60: "0.58", signal: "FORTE", structure: "TENDANCE HAUSSIÈRE", chine: "SOUTIEN CHINE (biais haussier)" },
+    { date: "16/08", spot: "71.95", usdcnh: "7.245", zscore: "+2.05", percentile: "91%", corr20: "0.69", corr60: "0.57", signal: "FORTE", structure: "TENDANCE HAUSSIÈRE", chine: "SOUTIEN CHINE (biais haussier)" },
+    { date: "15/08", spot: "71.20", usdcnh: "7.252", zscore: "+1.60", percentile: "85%", corr20: "0.64", corr60: "0.55", signal: "MODÉRÉE", structure: "TENDANCE HAUSSIÈRE", chine: "NEUTRE : Flux équilibrés" },
+  ],
+  GOLD: [
+    { date: "17/08", spot: "2 418,30", usdcnh: "7.241", zscore: "+1.05", percentile: "78%", corr20: "0.44", corr60: "0.39", signal: "MODÉRÉE", structure: "TENDANCE HAUSSIÈRE", chine: "NEUTRE : Yuan faible compensé par le refuge" },
+    { date: "16/08", spot: "2 405,10", usdcnh: "7.238", zscore: "+0.92", percentile: "74%", corr20: "0.41", corr60: "0.38", signal: "MODÉRÉE", structure: "TENDANCE HAUSSIÈRE", chine: "NEUTRE : Flux équilibrés" },
+    { date: "15/08", spot: "2 398,60", usdcnh: "7.235", zscore: "+0.75", percentile: "69%", corr20: "0.39", corr60: "0.37", signal: "FAIBLE", structure: "CONSOLIDATION", chine: "NEUTRE : Flux équilibrés" },
+  ],
+  SILVER: [
+    { date: "17/08", spot: "28.14", usdcnh: "7.241", zscore: "-1.92", percentile: "97%", corr20: "0.71", corr60: "0.62", signal: "FORTE", structure: "TENDANCE BAISSIÈRE", chine: "PRESSION CHINE (biais baissier)" },
+    { date: "16/08", spot: "28.55", usdcnh: "7.238", zscore: "-1.70", percentile: "93%", corr20: "0.68", corr60: "0.60", signal: "FORTE", structure: "TENDANCE BAISSIÈRE", chine: "PRESSION CHINE (biais baissier)" },
+    { date: "15/08", spot: "28.90", usdcnh: "7.235", zscore: "-1.40", percentile: "88%", corr20: "0.63", corr60: "0.57", signal: "MODÉRÉE", structure: "TENDANCE BAISSIÈRE", chine: "PRESSION CHINE (biais baissier)" },
+  ],
+};
 
 const MOCK_OBJECTIVES = [
   { label: "2 jours de Trading Minimum", result: "1 / 2", pass: false },

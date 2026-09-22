@@ -1,5 +1,5 @@
 // ============================================================
-// QUANT-MACRO — APP.JS
+// FAUCON SNIPERS TRADER — APP.JS
 // Navigation + rendu des sections + intégration Supabase.
 // Tant que Supabase n'est pas configuré (js/config.js), tout
 // tourne avec les données d'exemple de js/mockData.js.
@@ -66,10 +66,91 @@ function statusTone(text) {
   const t = text.toUpperCase();
   if (t.includes("PANIQUE") || t.includes("CRITIQUE") || t.includes("BAISSIER") || t.includes("FAIBLESSE")) return "red";
   if (t.includes("BON") || t.includes("SAIN") || t.includes("SOUTIEN") || t.includes("HAUSSIÈRE") || t.includes("FORTE")) return "green";
+  if (t.includes("MODÉRÉ") || t.includes("CONSOLIDATION") || t.includes("TENSION") || t.includes("FAIBLE")) return "amber";
   return "slate";
 }
 function pill(text) {
   return `<span class="pill ${statusTone(text)}">${text}</span>`;
+}
+
+// ============================================================
+// Mise en forme conditionnelle façon Excel — mêmes couleurs que
+// dans le classeur fourni (feuilles "Market.Tendance" et
+// "Correlation+Confirm.BRENT") : styles intégrés Excel "Bon"/"Mauvais",
+// rouge/jaune plein pour les états critiques, et l'échelle de couleur
+// 3 couleurs par défaut d'Excel (rouge-jaune-vert) pour les jauges.
+// ============================================================
+const XLS = {
+  good: ["#C6EFCE", "#006100"],       // style intégré Excel "Bon"
+  bad: ["#FFC7CE", "#9C0006"],        // style intégré Excel "Mauvais"
+  neutral: ["#FFEB9C", "#9C6500"],    // style intégré Excel "Neutre"
+  solidGreen: ["#92D050", "#0b2e00"], // vert plein utilisé pour les états "BON"
+  solidRed: ["#FF0000", "#FFFFFF"],   // rouge plein : PANIQUE / CRITIQUE
+};
+const XLS_SCALE = { min: "#F8696B", mid: "#FFEB84", max: "#63BE7B" }; // color scale 3 couleurs par défaut d'Excel
+
+function cfTd(text, tone) {
+  const [bg, fg] = XLS[tone] || XLS.good;
+  return `<td style="background:${bg};color:${fg};font-weight:700;">${text}</td>`;
+}
+
+// Niveau de risque (FAIBLE / MODÉRÉ / ÉLEVÉ / CRITIQUE) → code couleur Excel
+function riskExcelTone(risque) {
+  const r = risque.toUpperCase();
+  if (r.includes("CRITIQUE")) return "solidRed";
+  if (r.includes("ÉLEVÉ") || r.includes("ELEVE")) return "bad";
+  if (r.includes("MODÉRÉ") || r.includes("MOYEN")) return "neutral";
+  return "good";
+}
+// État / Signal / Structure (texte court) → code couleur Excel
+function stateExcelTone(text) {
+  const t = text.toUpperCase();
+  if (t.includes("PANIQUE") || t.includes("CRISE")) return "solidRed";
+  if (t.includes("BAISSIER") || t.includes("FAIBLESSE") || t.includes("PRESSION CHINE")) return "bad";
+  if (t.includes("MODÉRÉ") || t.includes("CONSOLIDATION") || t.includes("NEUTRE") || t.includes("FAIBLE")) return "neutral";
+  if (t.includes("HAUSSIER") || t.includes("HAUSSIÈRE") || t.includes("SOUTIEN") || t.includes("FORTE")) return "solidGreen";
+  return "good";
+}
+
+function hexToRgb(hex) {
+  const m = hex.replace("#", "");
+  return { r: parseInt(m.substring(0, 2), 16), g: parseInt(m.substring(2, 4), 16), b: parseInt(m.substring(4, 6), 16) };
+}
+function mixColor(c1, c2, t) {
+  const a = hexToRgb(c1), b = hexToRgb(c2);
+  return `rgb(${Math.round(a.r + (b.r - a.r) * t)},${Math.round(a.g + (b.g - a.g) * t)},${Math.round(a.b + (b.b - a.b) * t)})`;
+}
+function excelColorScale(value, min, max) {
+  const v = Math.max(min, Math.min(max, value));
+  const ratio = (v - min) / (max - min);
+  return ratio < 0.5 ? mixColor(XLS_SCALE.min, XLS_SCALE.mid, ratio / 0.5) : mixColor(XLS_SCALE.mid, XLS_SCALE.max, (ratio - 0.5) / 0.5);
+}
+
+// Z-Score : dans le fichier Excel, |z| <= 2 = zone normale ("Bon"), au-delà = extrême ("Mauvais")
+// — un écart statistique extrême est un risque, pas un signal positif.
+function zscoreCell(valueStr) {
+  const v = parseFloat(String(valueStr).replace(",", "."));
+  if (isNaN(v)) return `<td>${valueStr}</td>`;
+  return cfTd(valueStr, Math.abs(v) <= 2 ? "good" : "bad");
+}
+// Corrélation : négative = "Mauvais", positive = "Bon", > 0.8 = vert plein (comme dans le fichier)
+function corrCell(valueStr) {
+  const v = parseFloat(String(valueStr).replace(",", "."));
+  if (isNaN(v)) return `<td>${valueStr}</td>`;
+  return cfTd(valueStr, v > 0.8 ? "solidGreen" : v > 0 ? "good" : "bad");
+}
+// "Data bar" + color scale façon Excel pour les colonnes en pourcentage (ex: Percentile)
+function percentileCell(pctStr) {
+  const pct = parseFloat(pctStr);
+  if (isNaN(pct)) return `<td>${pctStr}</td>`;
+  const color = excelColorScale(pct, 0, 100);
+  const w = Math.max(0, Math.min(100, pct));
+  return `<td>
+    <div style="position:relative;background:rgba(148,163,184,0.12);border-radius:3px;overflow:hidden;min-width:64px;">
+      <div style="position:absolute;inset:0;width:${w}%;background:${color};opacity:0.55;"></div>
+      <span style="position:relative;padding:2px 6px;display:inline-block;font-weight:700;">${pctStr}</span>
+    </div>
+  </td>`;
 }
 
 // ---------------- Dashboard ----------------
@@ -193,27 +274,134 @@ async function renderDashboard() {
 }
 
 // ---------------- Analyse ----------------
+let currentAnalyseAsset = "BRENT";
+let currentTimeframe = "H1";
+let currentAnalysisTab = "tendance";
+
+// PRNG déterministe (mulberry32) : permet de faire varier légèrement les valeurs
+// selon l'unité de temps choisie, de façon stable (même actif + même unité = mêmes valeurs).
+function seededRandom(seed) {
+  let t = (seed += 0x6d2b79f5);
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+function seedFromString(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return h;
+}
+
+const TF_ROW_COUNT = { M1: 8, M5: 8, M15: 6, M30: 6, H1: 5, H4: 4 };
+const TF_MINUTES = { M1: 1, M5: 5, M15: 15, M30: 30, H1: 60, H4: 240 };
+const ANALYSE_ANCHOR = new Date(2026, 7, 17, 18, 0); // ancré sur le jeu de données mock (17 août)
+
+function tfLabel(tf, index) {
+  const minutes = TF_MINUTES[tf] || 60;
+  const d = new Date(ANALYSE_ANCHOR.getTime() - index * minutes * 60000);
+  return d.toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+function buildTendanceRows(asset, tf) {
+  const base = MOCK_TENDANCE_BY_ASSET[asset] || [];
+  if (!base.length) return [];
+  const n = TF_ROW_COUNT[tf] || base.length;
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    const src = base[i % base.length];
+    const drift = (seededRandom(seedFromString(`${asset}-${tf}-${i}`)) - 0.5) * 0.06;
+    const val = parseFloat(src.valeur) + drift;
+    rows.push({
+      date: tfLabel(tf, i),
+      valeur: (val >= 0 ? "+" : "") + val.toFixed(2),
+      risque: src.risque,
+      interpretation: src.interpretation,
+    });
+  }
+  return rows;
+}
+
+function buildConfirmRows(asset, tf) {
+  const base = MOCK_CONFIRM_BY_ASSET[asset] || [];
+  if (!base.length) return [];
+  const n = TF_ROW_COUNT[tf] || base.length;
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    const src = base[i % base.length];
+    rows.push({ ...src, date: tfLabel(tf, i) });
+  }
+  return rows;
+}
+
 function renderAnalyse() {
+  document.getElementById("tendanceAssetLabel").textContent = currentAnalyseAsset;
+  document.getElementById("confirmAssetLabel").textContent = currentAnalyseAsset;
+  const meta = document.getElementById("analysisMeta");
+  if (meta) meta.textContent = `Unité : ${currentTimeframe} · Actif : ${currentAnalyseAsset}`;
+
+  const tendanceRows = buildTendanceRows(currentAnalyseAsset, currentTimeframe);
   const tbody1 = document.querySelector("#tendanceTable tbody");
-  tbody1.innerHTML = MOCK_TENDANCE_ROWS.map((r) => `
+  tbody1.innerHTML = tendanceRows.map((r) => `
     <tr>
       <td><strong>${r.date}</strong></td>
-      <td>${r.spread}</td><td>${pill(r.spreadEtat)}</td>
-      <td>${r.basisBrent}</td><td>${pill(r.basisBrentEtat)}</td>
-      <td>${r.basisSilver}</td><td>${pill(r.basisSilverEtat)}</td>
-      <td>${r.basisGold}</td><td>${pill(r.basisGoldEtat)}</td>
+      <td>${r.valeur}</td>
+      ${cfTd(`<strong>${r.risque}</strong> — ${r.interpretation}`, riskExcelTone(r.risque))}
     </tr>`).join("");
 
+  const confirmRows = buildConfirmRows(currentAnalyseAsset, currentTimeframe);
   const tbody2 = document.querySelector("#confirmTable tbody");
-  tbody2.innerHTML = MOCK_CONFIRM_ROWS.map((r) => `
+  tbody2.innerHTML = confirmRows.map((r) => `
     <tr>
-      <td><strong>${r.date}</strong></td><td>${r.spot}</td><td>${r.usdcnh}</td>
-      <td>${r.zscore}</td><td>${r.percentile}</td><td>${r.corr20}</td><td>${r.corr60}</td>
-      <td>${pill(r.signal)}</td><td>${pill(r.structure)}</td><td>${pill(r.chine)}</td>
+      <td><strong>${r.date}</strong></td>
+      <td>${r.spot}</td><td>${r.usdcnh}</td>
+      ${zscoreCell(r.zscore)}
+      ${percentileCell(r.percentile)}
+      ${corrCell(r.corr20)}
+      ${corrCell(r.corr60)}
+      ${cfTd(r.signal, stateExcelTone(r.signal))}
+      ${cfTd(r.structure, stateExcelTone(r.structure))}
+      ${cfTd(r.chine, stateExcelTone(r.chine))}
     </tr>`).join("");
 }
 
+function initAnalyse() {
+  document.querySelectorAll("#assetTabs [data-asset]").forEach((btn) => {
+    btn.onclick = () => {
+      document.querySelectorAll("#assetTabs [data-asset]").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentAnalyseAsset = btn.dataset.asset;
+      renderAnalyse();
+    };
+  });
+
+  document.querySelectorAll("#timeframeTabs [data-tf]").forEach((btn) => {
+    btn.onclick = () => {
+      document.querySelectorAll("#timeframeTabs [data-tf]").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentTimeframe = btn.dataset.tf;
+      renderAnalyse();
+    };
+  });
+
+  document.querySelectorAll("#analysisTabs [data-analysistab]").forEach((btn) => {
+    btn.onclick = () => {
+      document.querySelectorAll("#analysisTabs [data-analysistab]").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentAnalysisTab = btn.dataset.analysistab;
+      document.getElementById("tendanceSection").style.display = currentAnalysisTab === "tendance" ? "block" : "none";
+      document.getElementById("confirmSection").style.display = currentAnalysisTab === "confirmation" ? "block" : "none";
+    };
+  });
+}
+
 // ---------------- Calculateur ----------------
+const ASSET_PRESETS = {
+  GOLD: { pip: 10, stop: 45 },
+  SILVER: { pip: 5, stop: 60 },
+  BRENT: { pip: 10, stop: 40 },
+  WTI: { pip: 10, stop: 40 },
+};
+
 function initCalculateur() {
   document.querySelectorAll("[data-calctab]").forEach((btn) => {
     btn.onclick = () => {
@@ -228,6 +416,15 @@ function initCalculateur() {
   const ids = ["calcCapital", "calcRiskPct", "calcStopPips", "calcPipValue", "calcEntry", "calcSl", "calcTp"];
   ids.forEach((id) => document.getElementById(id).addEventListener("input", updateCalculator));
   updateCalculator();
+
+  document.getElementById("calcAsset").addEventListener("change", (e) => {
+    const preset = ASSET_PRESETS[e.target.value];
+    if (preset) {
+      document.getElementById("calcPipValue").value = preset.pip;
+      document.getElementById("calcStopPips").value = preset.stop;
+      updateCalculator();
+    }
+  });
 
   document.getElementById("saveRiskPlan").onclick = saveRiskPlan;
 }
@@ -494,6 +691,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderNav();
   switchSection("dashboard");
   renderDashboard();
+  initAnalyse();
   renderAnalyse();
   initCalculateur();
   renderJournalCalendar();

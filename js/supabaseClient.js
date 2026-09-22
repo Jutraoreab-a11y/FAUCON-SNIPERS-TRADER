@@ -7,7 +7,7 @@ const supabase = supabaseReady
 
 if (!supabaseReady) {
   console.warn(
-    "[Quant-Macro] Supabase non configuré — l'app tourne avec des données d'exemple. " +
+    "[Faucon Snipers Trader] Supabase non configuré — l'app tourne avec des données d'exemple. " +
     "Remplis js/config.js avec tes clés pour activer la vraie base de données."
   );
 }

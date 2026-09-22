@@ -1,4 +1,4 @@
-# Quant-Macro — Projet VS Code
+# Faucon Snipers Trader — Projet VS Code (dossier technique : quant-macro-saas)
 
 Application HTML/CSS/JS connectée à Supabase, avec un pipeline de données Yahoo Finance (gratuit, usage personnel) prêt à être branché.
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Quant-Macro</title>
+<title>Faucon Snipers Trader</title>
 <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -12,7 +12,7 @@
 
   <!-- ============ SIDEBAR ============ -->
   <aside class="sidebar">
-    <div class="logo"><span class="logo-badge">Q</span> QUANT-MACRO</div>
+    <div class="logo"><span class="logo-badge">F</span> FAUCON SNIPERS TRADER</div>
     <nav class="nav" id="nav"></nav>
     <div class="sidebar-footer">
       <p class="status">MT5 : connecté</p>
@@ -81,42 +81,58 @@
     <section class="view" id="view-analyse">
       <div class="card">
         <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-          <div class="nav" style="flex-direction:row;background:rgba(2,6,23,0.6);border-radius:8px;padding:4px;width:auto;">
+          <div class="nav" style="flex-direction:row;background:rgba(2,6,23,0.6);border-radius:8px;padding:4px;width:auto;" id="assetTabs">
             <button class="nav-item active" data-asset="BRENT">BRENT</button>
             <button class="nav-item" data-asset="GOLD">GOLD</button>
             <button class="nav-item" data-asset="SILVER">SILVER</button>
           </div>
-          <select id="timeframeSelect" style="width:auto;">
-            <option>1min</option><option>5min</option><option>15min</option><option>30min</option>
-            <option>1H</option><option>4H</option><option selected>D1</option><option>Mois</option>
-          </select>
+          <div class="nav" style="flex-direction:row;background:rgba(2,6,23,0.6);border-radius:8px;padding:4px;width:auto;flex-wrap:wrap;" id="timeframeTabs">
+            <button class="nav-item" data-tf="M1">M1</button>
+            <button class="nav-item" data-tf="M5">M5</button>
+            <button class="nav-item" data-tf="M15">M15</button>
+            <button class="nav-item" data-tf="M30">M30</button>
+            <button class="nav-item active" data-tf="H1">H1</button>
+            <button class="nav-item" data-tf="H4">H4</button>
+          </div>
         </div>
       </div>
 
-      <div class="card">
-        <h2>PRESSION &amp; APPROVISIONNEMENT (Market.Tendance)</h2>
-        <div style="overflow-x:auto;">
-          <table id="tendanceTable">
-            <thead><tr>
-              <th>Date</th><th>Spread WTI-Brent</th><th>État</th>
-              <th>Basis Brent</th><th>État</th><th>Basis Silver</th><th>État</th>
-              <th>Basis Gold</th><th>État</th>
-            </tr></thead>
-            <tbody></tbody>
-          </table>
+      <div class="card" style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div class="nav" style="flex-direction:row;background:rgba(2,6,23,0.6);border-radius:8px;padding:4px;width:auto;" id="analysisTabs">
+            <button class="nav-item active" data-analysistab="tendance">📈 Tendance</button>
+            <button class="nav-item" data-analysistab="confirmation">✅ Confirmation</button>
+          </div>
+          <span class="sub" id="analysisMeta">Unité : H1 · Actif : BRENT</span>
         </div>
       </div>
 
-      <div class="card">
-        <h2>VALIDATION MACRO &amp; SIGNAUX (Correlation+Confirm.BRENT)</h2>
-        <div style="overflow-x:auto;">
-          <table id="confirmTable">
-            <thead><tr>
-              <th>Date</th><th>Spot</th><th>USD/CNH</th><th>Z-Score</th><th>Percentile</th>
-              <th>Corr 20j</th><th>Corr 60j</th><th>Signal</th><th>Structure</th><th>Vs Chine</th>
-            </tr></thead>
-            <tbody></tbody>
-          </table>
+      <div id="tendanceSection">
+        <div class="card">
+          <h2>PRESSION &amp; APPROVISIONNEMENT (Market.Tendance) — <span id="tendanceAssetLabel">BRENT</span></h2>
+          <div style="overflow-x:auto;">
+            <table id="tendanceTable">
+              <thead><tr>
+                <th>Date</th><th>Valeur (J)</th><th>Risque &amp; Interprétation</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="confirmSection" style="display:none;">
+        <div class="card">
+          <h2>VALIDATION MACRO &amp; SIGNAUX (Correlation+Confirm.) — <span id="confirmAssetLabel">BRENT</span></h2>
+          <div style="overflow-x:auto;">
+            <table id="confirmTable">
+              <thead><tr>
+                <th>Date</th><th>Spot</th><th>USD/CNH</th><th>Z-Score</th><th>Percentile</th>
+                <th>Corr 20j</th><th>Corr 60j</th><th>Signal</th><th>Structure</th><th>Vs Chine</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
