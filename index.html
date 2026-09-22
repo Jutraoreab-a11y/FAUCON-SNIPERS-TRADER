@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Quant-Macro</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="logo"><span class="logo-badge">Q</span> QUANT-MACRO</div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar-footer">
+      <p class="status">MT5 : connecté</p>
+      <p class="sub">Lecture seule · read-only</p>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main>
+    <div class="topbar">
+      <div>
+        <h1 id="topbarTitle">Salut 👋</h1>
+        <p class="sub" id="topbarSub">Voici ta vue du jour</p>
+      </div>
+      <span class="badge-plan">PLAN PRO</span>
+    </div>
+
+    <!-- ===================== DASHBOARD ===================== -->
+    <section class="view active" id="view-dashboard">
+      <div class="grid grid-4" id="assetCards"></div>
+
+      <div class="card">
+        <h2>TAUX FED (FOMC)</h2>
+        <div class="grid grid-3">
+          <div>
+            <p class="sub">Fourchette cible</p>
+            <p style="font-size:22px;font-weight:700;">4,25 % – 4,50 %</p>
+          </div>
+          <div>
+            <p class="sub">Probabilité implicite</p>
+            <p style="font-size:12px;">Maintien 78% · Baisse 25pb 20% · Baisse 50pb 2%</p>
+          </div>
+          <div>
+            <p class="sub">Prochaine réunion</p>
+            <p style="font-size:12px;">17-18 septembre 2026</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-4" id="economyCards"></div>
+
+      <div class="card" style="border-color:#9f1239;background:rgba(159,18,57,0.15);">
+        <p style="margin:0;font-size:13px;color:#fecdd3;">
+          <strong>ALERTE ALPHA QUANT — SILVER :</strong> structure de marché en panique, backwardation critique détectée.
+        </p>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <h2>PERFORMANCE DU PORTEFEUILLE</h2>
+          <div class="grid grid-2">
+            <div><p class="sub">PnL du jour</p><p style="font-size:18px;font-weight:700;color:var(--green);">+184.50 €</p></div>
+            <div><p class="sub">PnL de la semaine</p><p style="font-size:18px;font-weight:700;color:var(--red);">-62.00 €</p></div>
+            <div><p class="sub">R:R moyen</p><p style="font-size:18px;font-weight:700;">1.8</p></div>
+            <div><p class="sub">Win rate</p><p style="font-size:18px;font-weight:700;">58%</p></div>
+          </div>
+        </div>
+        <div class="card" id="newsCard">
+          <h2>ACTUALITÉS</h2>
+          <div id="newsList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== ANALYSE ===================== -->
+    <section class="view" id="view-analyse">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div class="nav" style="flex-direction:row;background:rgba(2,6,23,0.6);border-radius:8px;padding:4px;width:auto;">
+            <button class="nav-item active" data-asset="BRENT">BRENT</button>
+            <button class="nav-item" data-asset="GOLD">GOLD</button>
+            <button class="nav-item" data-asset="SILVER">SILVER</button>
+          </div>
+          <select id="timeframeSelect" style="width:auto;">
+            <option>1min</option><option>5min</option><option>15min</option><option>30min</option>
+            <option>1H</option><option>4H</option><option selected>D1</option><option>Mois</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>PRESSION &amp; APPROVISIONNEMENT (Market.Tendance)</h2>
+        <div style="overflow-x:auto;">
+          <table id="tendanceTable">
+            <thead><tr>
+              <th>Date</th><th>Spread WTI-Brent</th><th>État</th>
+              <th>Basis Brent</th><th>État</th><th>Basis Silver</th><th>État</th>
+              <th>Basis Gold</th><th>État</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>VALIDATION MACRO &amp; SIGNAUX (Correlation+Confirm.BRENT)</h2>
+        <div style="overflow-x:auto;">
+          <table id="confirmTable">
+            <thead><tr>
+              <th>Date</th><th>Spot</th><th>USD/CNH</th><th>Z-Score</th><th>Percentile</th>
+              <th>Corr 20j</th><th>Corr 60j</th><th>Signal</th><th>Structure</th><th>Vs Chine</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CALCULATEUR ===================== -->
+    <section class="view" id="view-calculateur">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h2 style="margin:0;">CALCULATEUR DE POSITION</h2>
+          <div class="nav" style="flex-direction:row;background:rgba(2,6,23,0.6);border-radius:8px;padding:4px;width:auto;">
+            <button class="nav-item active" data-calctab="calc">Calculateur</button>
+            <button class="nav-item" data-calctab="plan">Mon Plan</button>
+          </div>
+        </div>
+
+        <div id="calcTabCalc">
+          <div class="grid grid-2">
+            <div class="field"><label>Actif</label>
+              <select id="calcAsset"><option value="">Choisir un actif</option><option>GOLD</option><option>SILVER</option><option>BRENT</option><option>WTI</option></select>
+            </div>
+            <div class="field"><label>Capital (€)</label><input type="number" id="calcCapital" value="10000" /></div>
+            <div class="field"><label>Risque par trade (%)</label><input type="number" id="calcRiskPct" value="0.5" step="0.1" /></div>
+            <div class="field"><label>Stop (pips)</label><input type="number" id="calcStopPips" value="45" /></div>
+            <div class="field"><label>Valeur du pip (€)</label><input type="number" id="calcPipValue" value="10" /></div>
+          </div>
+          <div class="grid grid-3">
+            <div class="field"><label>Prix d'entrée</label><input type="number" id="calcEntry" /></div>
+            <div class="field"><label>Prix Stop Loss</label><input type="number" id="calcSl" /></div>
+            <div class="field"><label>Prix Take Profit</label><input type="number" id="calcTp" /></div>
+          </div>
+          <div class="grid grid-3">
+            <div class="card" style="margin:0;"><p class="sub">Montant risqué</p><p id="calcRiskAmount" style="font-size:20px;font-weight:700;">0.00 €</p></div>
+            <div class="card" style="margin:0;border-color:#0c4a6e;background:rgba(2,132,199,0.15);"><p class="sub">Taille de position</p><p id="calcLotSize" style="font-size:20px;font-weight:700;color:var(--blue);">0.00 lot</p></div>
+            <div class="card" style="margin:0;" id="calcRRCard"><p class="sub">Mon R:R</p><p id="calcRR" style="font-size:20px;font-weight:700;">–</p></div>
+          </div>
+        </div>
+
+        <div id="calcTabPlan" style="display:none;">
+          <div class="grid grid-2">
+            <div class="field"><label>Taille du compte (€)</label><input type="number" id="planAccountSize" value="10000" /></div>
+            <div class="field"><label>Nombre de trades max / jour</label><input type="number" id="planMaxTrades" value="5" /></div>
+            <div class="field"><label>Risque par trade (%)</label><input type="number" id="planRiskPerTrade" value="0.5" step="0.1" /></div>
+            <div class="field"><label>Risque total autorisé (%)</label><input type="number" id="planTotalRisk" value="5" /></div>
+            <div class="field"><label>Risque max journalier (%)</label><input type="number" id="planDailyRisk" value="2" /></div>
+          </div>
+          <button class="btn btn-secondary" id="saveRiskPlan">Enregistrer mon plan (Supabase)</button>
+          <span id="planSavedFlash" style="margin-left:10px;font-size:12px;color:var(--green);display:none;">✓ Enregistré</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== JOURNAL ===================== -->
+    <section class="view" id="view-journal">
+      <div class="card">
+        <h2>JOURNAL — AOÛT 2026</h2>
+        <div class="calendar" id="journalCalendarHead"></div>
+        <div class="calendar" id="journalCalendar" style="margin-top:6px;"></div>
+      </div>
+    </section>
+
+    <!-- ===================== PERFORMANCE ===================== -->
+    <section class="view" id="view-performance">
+      <div class="card" style="border-color:#075985;background:rgba(2,132,199,0.1);">
+        <p style="margin:0;font-size:12px;color:#bae6fd;">
+          Ces données servent uniquement à calculer tes statistiques de performance. Elles ne déclenchent, ne modifient et n'annulent jamais un ordre — aucun impact sur le marché.
+        </p>
+      </div>
+      <div class="grid grid-3">
+        <div class="card"><p class="sub">Solde</p><p style="font-size:20px;font-weight:700;">10 000,00 $</p></div>
+        <div class="card"><p class="sub">Equity</p><p style="font-size:20px;font-weight:700;color:var(--green);">10 000,19 $</p></div>
+        <div class="card"><p class="sub">PnL non réalisé</p><p style="font-size:20px;font-weight:700;color:var(--green);">+0.19 $</p></div>
+      </div>
+      <div class="card">
+        <h2>OBJECTIFS DE TRADING</h2>
+        <div id="objectivesList"></div>
+      </div>
+    </section>
+
+    <!-- ===================== PARAMÈTRES ===================== -->
+    <section class="view" id="view-parametres">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h2 style="margin:0;">COMPTES MT5 (LECTURE SEULE)</h2>
+          <button class="btn btn-primary" id="toggleAddAccount">+ Ajouter un compte</button>
+        </div>
+        <div id="accountsList"></div>
+        <div id="addAccountForm" style="display:none;margin-top:14px;">
+          <div class="grid grid-3">
+            <div class="field"><label>Login</label><input id="newLogin" placeholder="1234567" /></div>
+            <div class="field"><label>Serveur</label><input id="newServer" placeholder="Broker-Server" /></div>
+            <div class="field"><label>Mot de passe investisseur</label><input type="password" id="newPassword" /></div>
+          </div>
+          <button class="btn btn-primary" id="confirmAddAccount">Connecter ce compte</button>
+        </div>
+        <p class="sub" style="margin-top:14px;">
+          Seul le mot de passe investisseur (read-only) est accepté. Aucun ordre ne peut jamais être passé, modifié ou clôturé depuis l'application.
+        </p>
+      </div>
+
+      <div class="card">
+        <h2>EXÉCUTION EXTERNE (OPTIONNEL)</h2>
+        <p class="sub">Envoie chaque signal vers l'outil d'exécution de ton choix (Social Trader Tools, Make.com...) via un webhook. Ton SaaS ne détient jamais d'identifiant de trading.</p>
+        <div id="webhooksList" style="margin-top:10px;"></div>
+        <div class="grid grid-3" style="margin-top:14px;">
+          <div class="field"><label>Nom</label><input id="newHookLabel" placeholder="Social Trader Tools" /></div>
+          <div class="field" style="grid-column:span 2;"><label>URL du webhook</label><input id="newHookUrl" placeholder="https://..." /></div>
+        </div>
+        <button class="btn btn-primary" id="addWebhook">Ajouter ce webhook</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============ MOBILE BOTTOM NAV ============ -->
+<nav class="mobile-nav" id="mobileNav"></nav>
+
+<!-- ============ DAY DETAIL MODAL ============ -->
+<div class="modal-overlay" id="dayModalOverlay">
+  <div class="modal-box" id="dayModalBox"></div>
+</div>
+
+<!-- Supabase CDN + app scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/config.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/mockData.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
