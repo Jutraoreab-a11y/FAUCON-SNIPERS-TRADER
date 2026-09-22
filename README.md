@@ -101,3 +101,4 @@ Voici l'état exact du projet et ce qu'il reste à faire, pour repartir sans per
 4. Brancher la table `news` (actuellement vide, aucune source configurée)
 5. Ajouter l'authentification (Supabase Auth) si l'usage doit un jour dépasser une seule personne
 6. Reconsidérer l'intégration MT5 réelle (MetaApi, lecture seule) une fois la fiabilité des signaux validée sur l'historique accumulé
+# FAUCON-SNIPERS-TRADER
