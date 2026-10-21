@@ -18,12 +18,24 @@ quant-macro-saas/
 │   └── schedule.sql           <- planification automatique (cron)
 └── supabase/functions/
     ├── fetch-yahoo/            <- récupère les prix Yahoo Finance
-    └── compute-signals/         <- calcule Basis Spread, Z-Score, Percentile, corrélations
+    ├── compute-signals/         <- calcule Basis Spread, Z-Score, Percentile, corrélations
+    ├── backfill-history/        <- rattrapage initial de l'historique de prix
+    └── fetch-news/               <- récupère de vraies actualités (par ticker) pour la table `news`
 ```
 
-## Étape 1 — Voir l'app tourner (sans base de données)
+## Étape 1 — Voir l'app tourner
 
-Ouvre `index.html` avec l'extension **Live Server** dans VS Code. L'app tourne avec les données d'exemple (`js/mockData.js`).
+Ouvre `index.html` avec l'extension **Live Server** dans VS Code (ou `python3 -m http.server`).
+
+**Le proxy local (`tools/yahoo_proxy.py`) n'est plus nécessaire pour le Dashboard.**
+Le Dashboard lit maintenant ses données (prix, Basis, Z-Score, Percentile, économie,
+taux 10 ans) depuis les tables Supabase (`price_history`, `signals`, `economic_indicators`),
+alimentées côté serveur par les Edge Functions (voir Étape 3 et 4) — plus d'appel direct
+à Yahoo Finance depuis le navigateur, donc plus besoin de garder un terminal ouvert une
+fois Supabase configuré et le pipeline lancé. Le script reste dans `tools/` si tu veux
+prototyper un appel Yahoo direct pour une future page, mais rien dans l'app actuelle n'en
+dépend.
+Le Dashboard n'utilise plus de données d'exemple : voir la note plus bas.
 
 ## Étape 2 — Connecter Supabase
 
@@ -43,6 +55,7 @@ supabase link --project-ref TON_PROJECT_REF
 supabase functions deploy fetch-yahoo
 supabase functions deploy compute-signals
 supabase functions deploy backfill-history
+supabase functions deploy fetch-news
 ```
 
 **D'abord, rattrape l'historique (une seule fois) :**
@@ -55,7 +68,13 @@ Test manuel du reste :
 ```bash
 supabase functions invoke fetch-yahoo
 supabase functions invoke compute-signals
+supabase functions invoke fetch-news
 ```
+
+`fetch-news` va chercher, pour chaque actif suivi (par ticker, pas par mot-clé — une recherche
+par mot-clé renvoie l'actualité générale de Yahoo, non pertinente), les vraies actualités
+liées à ce marché et les stocke dans la table `news`. Aucun "niveau d'impact" n'est
+inventé : Yahoo ne fournit pas cette info, donc `impact_level` reste vide.
 
 Vérifie ensuite dans Supabase > Table Editor que `price_history` (colonne `timeframe` = `D1` ou `15m`) puis `signals` et `economic_indicators` se remplissent.
 
@@ -65,6 +84,7 @@ Ouvre `sql/schedule.sql`, remplace `<PROJECT_REF>` et `<SERVICE_ROLE_KEY>` (Proj
 - `fetch-yahoo-15m` : une bougie 15 minutes toutes les 15 min, en continu → construit ton propre historique intraday réel au fil du temps
 - `fetch-yahoo-daily` : la clôture propre du jour, une fois par jour
 - `compute-signals-daily` : recalcule les indicateurs après la clôture
+- `fetch-news-4x` : rafraîchit les actualités réelles 4 fois par jour
 
 ## Important — sur l'historique et la granularité
 

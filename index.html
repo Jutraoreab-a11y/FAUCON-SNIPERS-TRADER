@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Faucon Snipers Trader</title>
-<link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="css/style.css?v=1790175442" />
 </head>
 <body>
 
@@ -15,61 +15,33 @@
     <div class="logo"><span class="logo-badge">F</span> FAUCON SNIPERS TRADER</div>
     <nav class="nav" id="nav"></nav>
     <div class="sidebar-footer">
-      <p class="status">MT5 : connecté</p>
-      <p class="sub">Lecture seule · read-only</p>
+      <p class="status" id="mt5StatusText">MT5 : aucun compte connecté</p>
+      <p class="sub" id="mt5StatusSub">Ajoute un compte dans Paramètres pour l'activer</p>
     </div>
   </aside>
+
+  <!-- Ancré au bord droit de la barre latérale ; glisse au bord gauche de l'écran quand elle est repliée -->
+  <button id="sidebarToggleBtn" class="sidebar-toggle-btn" title="Réduire / afficher le menu">‹</button>
 
   <!-- ============ MAIN ============ -->
   <main>
     <div class="topbar">
       <div>
         <h1 id="topbarTitle">Salut 👋</h1>
-        <p class="sub" id="topbarSub">Voici ta vue du jour</p>
+        <p class="sub" id="topbarSub"></p>
       </div>
-      <span class="badge-plan">PLAN PRO</span>
     </div>
 
     <!-- ===================== DASHBOARD ===================== -->
     <section class="view active" id="view-dashboard">
-      <div class="grid grid-4" id="assetCards"></div>
+      <div class="grid grid-3" id="assetCards"></div>
 
-      <div class="card">
-        <h2>TAUX FED (FOMC)</h2>
-        <div class="grid grid-3">
-          <div>
-            <p class="sub">Fourchette cible</p>
-            <p style="font-size:22px;font-weight:700;">4,25 % – 4,50 %</p>
-          </div>
-          <div>
-            <p class="sub">Probabilité implicite</p>
-            <p style="font-size:12px;">Maintien 78% · Baisse 25pb 20% · Baisse 50pb 2%</p>
-          </div>
-          <div>
-            <p class="sub">Prochaine réunion</p>
-            <p style="font-size:12px;">17-18 septembre 2026</p>
-          </div>
-        </div>
-      </div>
+      <div class="card" id="fomcCard"></div>
 
       <div class="grid grid-4" id="economyCards"></div>
 
-      <div class="card" style="border-color:#9f1239;background:rgba(159,18,57,0.15);">
-        <p style="margin:0;font-size:13px;color:#fecdd3;">
-          <strong>ALERTE ALPHA QUANT — SILVER :</strong> structure de marché en panique, backwardation critique détectée.
-        </p>
-      </div>
-
       <div class="grid grid-2">
-        <div class="card">
-          <h2>PERFORMANCE DU PORTEFEUILLE</h2>
-          <div class="grid grid-2">
-            <div><p class="sub">PnL du jour</p><p style="font-size:18px;font-weight:700;color:var(--green);">+184.50 €</p></div>
-            <div><p class="sub">PnL de la semaine</p><p style="font-size:18px;font-weight:700;color:var(--red);">-62.00 €</p></div>
-            <div><p class="sub">R:R moyen</p><p style="font-size:18px;font-weight:700;">1.8</p></div>
-            <div><p class="sub">Win rate</p><p style="font-size:18px;font-weight:700;">58%</p></div>
-          </div>
-        </div>
+        <div class="card" id="portfolioPerfCard"></div>
         <div class="card" id="newsCard">
           <h2>ACTUALITÉS</h2>
           <div id="newsList"></div>
@@ -80,20 +52,10 @@
     <!-- ===================== ANALYSE ===================== -->
     <section class="view" id="view-analyse">
       <div class="card">
-        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-          <div class="nav" style="flex-direction:row;background:rgba(2,6,23,0.6);border-radius:8px;padding:4px;width:auto;" id="assetTabs">
-            <button class="nav-item active" data-asset="BRENT">BRENT</button>
-            <button class="nav-item" data-asset="GOLD">GOLD</button>
-            <button class="nav-item" data-asset="SILVER">SILVER</button>
-          </div>
-          <div class="nav" style="flex-direction:row;background:rgba(2,6,23,0.6);border-radius:8px;padding:4px;width:auto;flex-wrap:wrap;" id="timeframeTabs">
-            <button class="nav-item" data-tf="M1">M1</button>
-            <button class="nav-item" data-tf="M5">M5</button>
-            <button class="nav-item" data-tf="M15">M15</button>
-            <button class="nav-item" data-tf="M30">M30</button>
-            <button class="nav-item active" data-tf="H1">H1</button>
-            <button class="nav-item" data-tf="H4">H4</button>
-          </div>
+        <div class="nav" style="flex-direction:row;background:rgba(2,6,23,0.6);border-radius:8px;padding:4px;width:auto;" id="assetTabs">
+          <button class="nav-item active" data-asset="BRENT">BRENT</button>
+          <button class="nav-item" data-asset="GOLD">GOLD</button>
+          <button class="nav-item" data-asset="SILVER">SILVER</button>
         </div>
       </div>
 
@@ -103,18 +65,18 @@
             <button class="nav-item active" data-analysistab="tendance">📈 Tendance</button>
             <button class="nav-item" data-analysistab="confirmation">✅ Confirmation</button>
           </div>
-          <span class="sub" id="analysisMeta">Unité : H1 · Actif : BRENT</span>
+          <span class="sub" id="analysisMeta">Actif : BRENT</span>
         </div>
       </div>
 
       <div id="tendanceSection">
         <div class="card">
-          <h2>PRESSION &amp; APPROVISIONNEMENT (Market.Tendance) — <span id="tendanceAssetLabel">BRENT</span></h2>
-          <div style="overflow-x:auto;">
+          <h2>PRESSION &amp; APPROVISIONNEMENT (Market.Tendance) : <span id="tendanceAssetLabel">BRENT</span></h2>
+          <p class="sub" id="tendanceSpotNote" style="margin:4px 0 12px;"></p>
+          <input type="text" id="tendanceQuickFilter" placeholder="Filtrer par date, ouverture, en cours ou fermeture…" style="width:100%;max-width:420px;margin:0 0 12px;padding:8px 10px;background:rgba(2,6,23,0.6);border:1px solid var(--border);border-radius:8px;color:inherit;font-size:12px;" />
+          <div style="overflow-x:auto;max-height:520px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;">
             <table id="tendanceTable">
-              <thead><tr>
-                <th>Date</th><th>Valeur (J)</th><th>Risque &amp; Interprétation</th>
-              </tr></thead>
+              <thead><tr></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -123,16 +85,60 @@
 
       <div id="confirmSection" style="display:none;">
         <div class="card">
-          <h2>VALIDATION MACRO &amp; SIGNAUX (Correlation+Confirm.) — <span id="confirmAssetLabel">BRENT</span></h2>
-          <div style="overflow-x:auto;">
+          <h2>VALIDATION MACRO &amp; SIGNAUX (Correlation+Confirm.) : <span id="confirmAssetLabel">BRENT</span></h2>
+          <p class="sub" id="confirmSpotNote" style="margin:4px 0 12px;"></p>
+          <div style="overflow-x:auto;max-height:520px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;">
             <table id="confirmTable">
-              <thead><tr>
-                <th>Date</th><th>Spot</th><th>USD/CNH</th><th>Z-Score</th><th>Percentile</th>
-                <th>Corr 20j</th><th>Corr 60j</th><th>Signal</th><th>Structure</th><th>Vs Chine</th>
-              </tr></thead>
+              <thead><tr></tr></thead>
               <tbody></tbody>
             </table>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SAISIE SPOT ===================== -->
+    <section class="view" id="view-saisie">
+      <div class="card">
+        <h2 style="margin:0 0 14px;">IMPORTER UN FICHIER INVESTING.COM</h2>
+
+        <div class="grid grid-2">
+          <div class="field">
+            <label>Actif</label>
+            <select id="saisieAssetSelect">
+              <option value="BRENT_SPOT_REAL" data-url="investing.com/commodities/brent-oil-historical-data">SPOT BRENT</option>
+              <option value="WTI_SPOT_REAL" data-url="investing.com/commodities/crude-oil-historical-data">SPOT WTI</option>
+              <option value="BRENT_FUTURE" data-url="investing.com/commodities/brent-oil-historical-data">BRENT FUTURE (M1)</option>
+              <option value="WTI_FUTURE" data-url="investing.com/commodities/crude-oil-historical-data">WTI FUTURE (M1)</option>
+              <option value="XAUUSD_SPOT" data-url="investing.com/currencies/xau-usd-historical-data">SPOT GOLD (XAU/USD)</option>
+              <option value="GOLD_FUTURE" data-url="investing.com/commodities/gold-historical-data">GOLD FUTUR</option>
+              <option value="XAGUSD_SPOT" data-url="investing.com/currencies/xag-usd-historical-data">SPOT SILVER (XAG/USD)</option>
+              <option value="SILVER_FUTURE" data-url="investing.com/commodities/silver-historical-data">SILVER CONTRAT</option>
+              <option value="USD_CNH" data-url="investing.com/currencies/usd-cnh-historical-data">USD/CNH</option>
+              <option value="SP500" data-url="investing.com/indices/us-spx-500-historical-data">S&amp;P 500</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Fichier (Excel, CSV ou JSON)</label>
+            <input type="file" id="saisieFile" accept=".xlsx,.xls,.csv,.json" />
+          </div>
+        </div>
+
+        <p class="sub" id="saisieUrlHint" style="margin:10px 0 0;"></p>
+
+        <div style="display:flex;align-items:center;gap:12px;margin-top:14px;">
+          <button class="btn btn-primary" id="saisieChargerBtn">Charger</button>
+          <span class="sub" id="saisieStatus"></span>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <h2 style="margin:0 0 14px;">HISTORIQUE DES IMPORTS</h2>
+        <div style="overflow-x:auto;max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;">
+          <table id="importLogTable">
+            <thead><tr class="thead-flat"><th>Date d'import</th><th>Actif</th><th>Fichier</th><th>Lignes reçues</th><th>Lignes enregistrées</th><th>Actions</th></tr></thead>
+            <tbody><tr><td colspan="6" class="sub">Chargement...</td></tr></tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -187,7 +193,7 @@
     <!-- ===================== JOURNAL ===================== -->
     <section class="view" id="view-journal">
       <div class="card">
-        <h2>JOURNAL — AOÛT 2026</h2>
+        <h2 id="journalMonthLabel">JOURNAL</h2>
         <div class="calendar" id="journalCalendarHead"></div>
         <div class="calendar" id="journalCalendar" style="margin-top:6px;"></div>
       </div>
@@ -197,13 +203,13 @@
     <section class="view" id="view-performance">
       <div class="card" style="border-color:#075985;background:rgba(2,132,199,0.1);">
         <p style="margin:0;font-size:12px;color:#bae6fd;">
-          Ces données servent uniquement à calculer tes statistiques de performance. Elles ne déclenchent, ne modifient et n'annulent jamais un ordre — aucun impact sur le marché.
+          Ces données servent uniquement à calculer tes statistiques de performance. Elles ne déclenchent, ne modifient et n'annulent jamais un ordre : aucun impact sur le marché.
         </p>
       </div>
       <div class="grid grid-3">
-        <div class="card"><p class="sub">Solde</p><p style="font-size:20px;font-weight:700;">10 000,00 $</p></div>
-        <div class="card"><p class="sub">Equity</p><p style="font-size:20px;font-weight:700;color:var(--green);">10 000,19 $</p></div>
-        <div class="card"><p class="sub">PnL non réalisé</p><p style="font-size:20px;font-weight:700;color:var(--green);">+0.19 $</p></div>
+        <div class="card"><p class="sub">Solde</p><p id="perfSolde" style="font-size:20px;font-weight:700;">Indisponible</p></div>
+        <div class="card"><p class="sub">Equity</p><p id="perfEquity" style="font-size:20px;font-weight:700;">Indisponible</p></div>
+        <div class="card"><p class="sub">PnL non réalisé</p><p id="perfPnl" style="font-size:20px;font-weight:700;">Indisponible</p></div>
       </div>
       <div class="card">
         <h2>OBJECTIFS DE TRADING</h2>
@@ -213,6 +219,17 @@
 
     <!-- ===================== PARAMÈTRES ===================== -->
     <section class="view" id="view-parametres">
+      <div class="card">
+        <h2 style="margin:0 0 16px;">PROFIL</h2>
+        <div class="grid grid-3">
+          <div class="field"><label>Prénom</label><input id="profilPrenom" placeholder="Prénom" /></div>
+          <div class="field"><label>Email</label><input id="profilEmail" type="email" placeholder="email@exemple.com" /></div>
+          <div class="field"><label>Nouveau mot de passe</label><input id="profilPassword" type="password" placeholder="••••••••" /></div>
+        </div>
+        <button class="btn btn-primary" id="saveProfilBtn" style="margin-top:12px;">Enregistrer</button>
+        <p class="sub" id="profilStatus" style="margin-top:10px;"></p>
+      </div>
+
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
           <h2 style="margin:0;">COMPTES MT5 (LECTURE SEULE)</h2>
@@ -242,6 +259,22 @@
         </div>
         <button class="btn btn-primary" id="addWebhook">Ajouter ce webhook</button>
       </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <h2 style="margin:0;">SOURCES DE L'IA (PALETTE)</h2>
+          <button class="btn btn-primary" id="runAiBtn">Lancer une analyse IA</button>
+        </div>
+        <p class="sub">L'IA Anthropic lit uniquement ces sites (recherche web restreinte). Chaque donnée renvoie à sa source.</p>
+        <div id="sourcesList" style="margin-top:10px;"></div>
+        <div class="grid grid-3" style="margin-top:14px;">
+          <div class="field"><label>Nom</label><input id="newSrcName" placeholder="Reuters" /></div>
+          <div class="field"><label>Domaine</label><input id="newSrcDomain" placeholder="reuters.com" /></div>
+          <div class="field"><label>&nbsp;</label><button class="btn btn-primary" id="addSource">Ajouter</button></div>
+        </div>
+        <h2 style="margin-top:18px;">DERNIERS RÉSULTATS CITÉS</h2>
+        <div id="findingsList" class="sub">Aucun résultat pour l'instant.</div>
+      </div>
     </section>
 
   </main>
@@ -257,9 +290,11 @@
 
 <!-- Supabase CDN + app scripts -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="js/config.js"></script>
-<script src="js/supabaseClient.js"></script>
-<script src="js/mockData.js"></script>
-<script src="js/app.js"></script>
+<script src="js/config.js?v=1790175442"></script>
+<script src="js/supabaseClient.js?v=1790175442"></script>
+<script src="js/mockData.js?v=1790175442"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="js/app.js?v=1790175442"></script>
+<script src="js/aiSources.js"></script>
 </body>
 </html>

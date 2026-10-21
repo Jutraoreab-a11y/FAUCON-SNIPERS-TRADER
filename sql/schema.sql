@@ -7,7 +7,10 @@
 -- long terme, 15m pour l'intraday). Une ligne par ticker/timeframe/horodatage.
 create table if not exists price_history (
   id bigint generated always as identity primary key,
-  ticker text not null,          -- ex: 'GC=F', 'BZ=F', 'USDCNH=X'
+  ticker text not null,          -- ex: 'GOLD_FUTURE', 'BRENT_FUTURE', 'USD_CNH' (noms
+                                  -- propres, sans '=' ni '^' — ces caractères entraient en
+                                  -- conflit avec la syntaxe des query strings PostgREST/URL,
+                                  -- ex. ticker=eq.BZ=F, source de confusions répétées)
   timeframe text not null default 'D1',  -- 'D1' | '15m'
   ts timestamptz not null,       -- horodatage exact de la bougie
   open numeric, high numeric, low numeric,
@@ -15,9 +18,43 @@ create table if not exists price_history (
   volume numeric,
   source text default 'yahoo',
   fetched_at timestamptz default now(),
+  import_id bigint references import_log(id) on delete cascade,
+                                  -- quel import (voir import_log) a écrit cette ligne en
+                                  -- dernier. ON DELETE CASCADE : supprimer un import depuis
+                                  -- "Historique des imports" supprime avec lui, automatiquement
+                                  -- et sans code applicatif à maintenir, toutes les lignes de
+                                  -- prix qui lui appartiennent encore à cet instant (celles
+                                  -- qu'un import plus récent n'a pas déjà remplacées pour les
+                                  -- mêmes dates). Pour vider complètement un ticker : supprimer
+                                  -- tous ses imports un par un.
   unique (ticker, timeframe, ts)
 );
 create index if not exists idx_price_history_lookup on price_history (ticker, timeframe, ts desc);
+create index if not exists idx_price_history_import_id on price_history (import_id);
+
+-- Trace de chaque import manuel (page "Saisie Spot") : quel fichier, pour quel ticker,
+-- combien de lignes reçues vs réellement enregistrées, et quand. Écrite par l'edge function
+-- ingest-manual-spot à chaque appel réussi ; affichée dans la page Saisie Spot pour vérifier
+-- après coup ce qui a été importé, avec deux actions possibles sur chaque ligne :
+--   - Supprimer (edge function delete-import) : retire l'import ET, via price_history.import_id
+--     ON DELETE CASCADE, les données de prix qui lui appartiennent encore ;
+--   - Prioriser/repousser (edge function reactivate-import) : réapplique rows_snapshot sur les
+--     dates que cet import couvre, même si un import plus récent les avait recouvertes depuis.
+-- Un nouvel import (ingest-manual-spot) n'écrase JAMAIS tout l'historique du ticker : seules
+-- les dates "à cheval" avec le nouveau fichier sont remplacées (upsert par date).
+create table if not exists import_log (
+  id bigint generated always as identity primary key,
+  ticker text not null,
+  filename text not null,
+  lignes_recues int,
+  lignes_valides int,
+  lignes_enregistrees int,
+  rows_snapshot jsonb,            -- copie exacte des lignes {date,open,high,low,close} envoyées
+                                   -- lors de cet import — permet de le "repousser" plus tard
+                                   -- (reactivate-import) sans redemander le fichier
+  imported_at timestamptz default now()
+);
+create index if not exists idx_import_log_recent on import_log (imported_at desc);
 
 create table if not exists assets (
   id text primary key,               -- 'GOLD' | 'SILVER' | 'BRENT' | 'WTI'
@@ -41,7 +78,11 @@ create table if not exists signals (
   institutional_note text,
   signal_label text,        -- 'BIAIS HAUSSIER' | 'BIAIS BAISSIER' | 'RÉSILIENCE' | 'NEUTRE'
   tone text,                -- 'green' | 'red' | 'blue'
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  tendance_detail jsonb,       -- détail fidèle à l'onglet Excel "Market.Tendance" (par actif)
+  confirmation_detail jsonb,   -- détail fidèle à Correlation+Confirm.BRENT / Gold.Silver
+  unique (asset_id, date)   -- une seule ligne par actif/jour : compute-signals écrase au
+                            -- lieu d'empiler des doublons (voir upsert onConflict côté code)
 );
 
 create table if not exists economic_indicators (
@@ -57,7 +98,9 @@ create table if not exists news (
   title text not null,
   source text,
   asset_tag text,
-  impact_level text,        -- 'Haute' | 'Moyenne' | 'Basse'
+  impact_level text,        -- 'Haute' | 'Moyenne' | 'Basse' — laissé NULL : Yahoo Finance
+                             -- ne fournit pas cette info, on ne l'invente jamais.
+  link text,
   published_at timestamptz default now()
 );
 
@@ -142,3 +185,5 @@ alter table economic_indicators enable row level security;
 create policy "public read econ" on economic_indicators for select using (true);
 alter table news enable row level security;
 create policy "public read news" on news for select using (true);
+alter table import_log enable row level security;
+create policy "public read import_log" on import_log for select using (true);

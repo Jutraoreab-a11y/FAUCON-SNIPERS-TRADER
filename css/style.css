@@ -19,7 +19,7 @@ body {
   font-family: Inter, system-ui, -apple-system, sans-serif;
 }
 
-.app { display: flex; min-height: 100vh; }
+.app { display: flex; min-height: 100vh; position: relative; }
 
 /* ---------- Sidebar ---------- */
 .sidebar {
@@ -108,11 +108,20 @@ button.btn {
 .btn-primary:hover { background: #0ea5e9; }
 .btn-secondary { background: #1e293b; color: #e2e8f0; }
 .btn-secondary:hover { background: #334155; }
+.btn-sm { padding: 5px 10px; font-size: 11px; background: #1e293b; color: #e2e8f0; margin-right: 4px; }
+.btn-sm:hover { background: #334155; }
+.btn-danger { background: #3f1d1d; color: #fca5a5; }
+.btn-danger:hover { background: #5c2626; }
 
 /* ---------- Tables ---------- */
 table { width: 100%; border-collapse: collapse; font-size: 12px; }
 th { text-align: left; color: var(--text-dim); font-weight: 500; padding: 8px 12px 8px 0; border-bottom: 1px solid var(--border); }
 td { padding: 10px 12px 10px 0; border-bottom: 1px solid rgba(30, 41, 59, 0.5); }
+
+/* En-tête fixe pour les tableaux longs (ex: Tendance sur 3 ans) dans un conteneur scrollable */
+#tendanceTable thead th, #confirmTable thead th {
+  position: sticky; top: 0; z-index: 1; background: #0b1526; padding-left: 12px;
+}
 
 /* ---------- Calendar ---------- */
 .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
@@ -152,3 +161,41 @@ td { padding: 10px 12px 10px 0; border-bottom: 1px solid rgba(30, 41, 59, 0.5); 
   }
   .mobile-nav button.active { color: var(--blue); }
 }
+
+/* ---------- Sidebar collapse / expand ---------- */
+.sidebar {
+  transition: width 0.18s ease, padding 0.18s ease, opacity 0.15s ease;
+  overflow: hidden;
+}
+.app.sidebar-collapsed .sidebar {
+  width: 0; padding-left: 0; padding-right: 0; border-right: none; opacity: 0; pointer-events: none;
+}
+.sidebar-toggle-btn {
+  position: absolute; top: 24px; left: 240px; transform: translateX(-50%);
+  z-index: 60;
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 1px solid var(--border); background: #0b1526; color: var(--text);
+  cursor: pointer; font-size: 13px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: left 0.18s ease;
+}
+.sidebar-toggle-btn:hover { background: #142238; }
+.app.sidebar-collapsed .sidebar-toggle-btn { left: 0; }
+@media (max-width: 768px) { .sidebar-toggle-btn { display: none; } }
+
+/* ---------- Tableaux Tendance/Confirmation : en-têtes groupés + filtres ---------- */
+#tendanceTable thead th, #confirmTable thead th { white-space: nowrap; }
+.thgrp-a { background: rgba(37, 99, 235, 0.28) !important; color: #dbeafe !important; }
+.thgrp-b { background: rgba(217, 119, 6, 0.28) !important; color: #fde68a !important; }
+.thead-row1 th { position: sticky; top: 0; z-index: 3; text-align: center; font-weight: 700; }
+.thead-row2 th { position: sticky; top: 32px; z-index: 3; }
+.thead-row3.filter-row th { position: sticky; top: 64px; z-index: 3; padding: 4px 6px 4px 0; background: #0b1526; }
+.thead-flat th { position: sticky; top: 0; z-index: 3; }
+.thead-flat + .thead-row3.filter-row th { top: 32px; }
+.filter-row input {
+  width: 100%; min-width: 64px; box-sizing: border-box;
+  background: rgba(2, 6, 23, 0.7); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text); font-size: 11px; padding: 4px 6px;
+}
+.filter-row input::placeholder { color: var(--text-dim); }
+.cell-live { color: var(--blue); font-weight: 700; }
